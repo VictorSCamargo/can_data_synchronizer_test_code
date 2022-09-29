@@ -1,0 +1,2 @@
+PB9 -> CAN_TX
+PB8 -> CAN_RX

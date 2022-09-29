@@ -1,0 +1,9 @@
+stm32f103\dados_mvs.o: ..\Core\Src\dados_mvs.cpp
+stm32f103\dados_mvs.o: ../Core/Inc/dados_mvs.h
+stm32f103\dados_mvs.o: ../Core/Inc/funcoes_mva.h
+stm32f103\dados_mvs.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+stm32f103\dados_mvs.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+stm32f103\dados_mvs.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+stm32f103\dados_mvs.o: ../Core/Inc/funcoes_mvg.h
+stm32f103\dados_mvs.o: ../Core/Inc/funcoes_mtc.h
+stm32f103\dados_mvs.o: ../Core/Inc/funcoes_usb.h
