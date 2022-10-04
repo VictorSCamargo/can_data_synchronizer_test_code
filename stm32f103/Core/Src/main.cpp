@@ -1,30 +1,31 @@
 /* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2022 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+
+/*
+	Main's code generated in STM32CubeMX software.
+
+	[english]
+	Test code for CanMvs class: data syncronizer between two STM32 microcontrolers.
+	This code has more than needed to use the class. Focus on the most important parts.
+	Open the file can_mvs.h for details. Configure what is need in can_mvs_config.h
+	You should debug the data values and callback to check if it is working.
+	Also, I used a button callback to execute functions. You should modify as needed.
+
+	[portugues]
+	Codigo de teste para a classe CanMvs: sincronizador de dados entre placas STM32.
+	O codigo tem mais do que o necessario para testar a classe. Foque no importante.
+	Abrir arquivo can_mvs.h para detalhes do funcionamento da classe.
+	Debugue os valores e o callback para validar funcionamento.
+	Utilizei um interrupt com botao para realizar as funcionalidades de teste.
+*/
+
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
 #include "control_ihm.h"
-
 
 /* USER CODE END Includes */
 
@@ -75,29 +76,34 @@ static void MX_TIM2_Init(void);
 
 ControlIhm ctrlIhm;
 
-char texto[20];
-int count = 0;
-
-uint32_t TxMailbox;
-
-unsigned char datacheck = 0;
-
 uint16_t count_callback = 0;
-
-// Variaveis da tela
-unsigned char refresh_display = 0;
-int numero_na_tela = 0;
-char stringRetorno[10];
-
-// Variaveis do botao
-bool encoderPressionado = false;
-int countParaVoltar = 0;
-bool botaoVoltarFoiAtivado = false;
 
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-	ctrlIhm.can.receive_data_callback();
+	ctrlIhm.can_receive_data_callback();
+
+	HAL_GPIO_TogglePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin);
 	count_callback++;
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	if(htim == &htim2)	//10Hz timer
+	{
+		ctrlIhm.timer_2_callback();
+	}
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	switch(GPIO_Pin)
+	{
+		case ENCODER_BTN_Pin:
+			ctrlIhm.gpio_button_callback(BUTTON_1);
+			break;		
+		default:
+			break;
+	}
 }
 
 /* USER CODE END 0 */
@@ -134,20 +140,12 @@ int main(void)
   MX_USART1_UART_Init();
   MX_CAN_Init();
   MX_I2C1_Init();
-  MX_USB_DEVICE_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
 	HAL_TIM_Base_Start_IT(&htim2);
 
-	HAL_CAN_Start(&hcan);
-
-  // Activate the notification
-  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO1_MSG_PENDING);
-
-	TM_HD44780_Init(20,4);
-
-	ctrlIhm.iniciar();
+	ctrlIhm.init(&hcan);
 
   /* USER CODE END 2 */
 
@@ -155,7 +153,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-		ctrlIhm.programa_principal();
+		ctrlIhm.main_program();
 
     /* USER CODE END WHILE */
 
@@ -172,7 +170,6 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -202,12 +199,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
-  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-  {
-    Error_Handler();
-  }
 }
 
 /**
@@ -225,7 +216,7 @@ static void MX_CAN_Init(void)
   /* USER CODE BEGIN CAN_Init 1 */
 
 	#ifndef CAN_MVS_LOOPBACK_MODE
-	
+
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
   hcan.Init.Prescaler = 18;
@@ -271,15 +262,17 @@ static void MX_CAN_Init(void)
   canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
   canfilterconfig.FilterBank = 10;
   canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO1;
-  canfilterconfig.FilterIdHigh = CAN_MVS_FILTER_ID;
+  canfilterconfig.FilterIdHigh = HAL_CAN_FILTER_ID;
   canfilterconfig.FilterIdLow = 0;
-  canfilterconfig.FilterMaskIdHigh = CAN_MVS_FILTER_ID;
+  canfilterconfig.FilterMaskIdHigh = HAL_CAN_FILTER_ID;
   canfilterconfig.FilterMaskIdLow = 0x0000;
   canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
   canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
-  canfilterconfig.SlaveStartFilterBank = 0;  // doesn't matter in single can controllers
-	
-	HAL_CAN_ConfigFilter(&hcan, &canfilterconfig);
+  canfilterconfig.SlaveStartFilterBank = 0;
+  if (HAL_CAN_ConfigFilter(&hcan, &canfilterconfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
 	
   /* USER CODE END CAN_Init 2 */
 
@@ -485,107 +478,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-	if(htim == &htim2)	//timer configurado para 10Hz
-	{
-		if(++count >= 5)
-		{
-			count = 0;
-		}
-		
-		static unsigned char count_display = 0;
-
-		if (++count_display >= 10){ //divisor de frequencia do timer
-			//HAL_GPIO_TogglePin(BUILTIN_LED_GPIO_Port, BUILTIN_LED_Pin);
-			count_display = 0;
-			refresh_display = 1;
-		}
-
-		//especie de delay para a funcionalidade de botoes
-		uint8_t delayBotoes = ctrlIhm.getDelayLeituraBotoesIhm();
-		if(delayBotoes > 0){
-			ctrlIhm.setDelayLeituraBotoesIhm(delayBotoes - 1);
-		}
-		
-		//cuida da freq de atualizacao do display
-		uint8_t delayTela = ctrlIhm.getDelayAtualizaTela();
-		if(delayTela > 0){
-			ctrlIhm.setDelayAtualizaTela(delayTela - 1);
-		}
-		
-		//cuida do tempo que diferencia o aperto do botao entre "entrar" e "voltar"
-		if ((encoderPressionado == true) && (botaoVoltarFoiAtivado == false)){
-			if (++countParaVoltar >= 4){
-				countParaVoltar = 0;
-				botaoVoltarFoiAtivado = true;
-				ctrlIhm.setBotaoSelecionado(tBotaoVoltar);
-			}
-		}
-	}
-}
-
-
-Botbot verifica_sentido_encoder(void){
-	
-	int Lado_A = HAL_GPIO_ReadPin(ENCODER_A_EXTI_GPIO_Port, ENCODER_A_EXTI_Pin);
-	int Lado_B = HAL_GPIO_ReadPin(ENCODER_B_GPIO_Port, ENCODER_B_Pin);
-	
-	 if (Lado_B != Lado_A) {
-
-		 //sentido horario
-		 numero_na_tela++;
-		 return tSentidoHorario;
-		 
-	 } else {
-		 
-		 //sentido anti-horario
-		 numero_na_tela--;
-		 return tSentidoAntiHorario;
-		 
-	 }
-}
-
-void processaBotaoEncoder(void){
-	
-	if (encoderPressionado == false){
-		encoderPressionado = true;
-	}else{
-		encoderPressionado = false;
-
-		if (botaoVoltarFoiAtivado == false){
-			ctrlIhm.setBotaoSelecionado(tBotaoEntrar);
-			countParaVoltar = 0;
-		}
-		botaoVoltarFoiAtivado = false;
-	}
-}
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	
-	switch(GPIO_Pin)
-	{
-		case ENCODER_A_EXTI_Pin:
-			ctrlIhm.setBotaoSelecionado(verifica_sentido_encoder());
-			break;
-		
-		case ENCODER_BTN_Pin:
-			ctrlIhm.setBotaoSelecionado(tBotaoEntrar);
-			//processaBotaoEncoder();
-			break;
-		
-		case BTN_VOLTAR_Pin:
-			ctrlIhm.setBotaoSelecionado(tBotaoVoltar);
-			break;
-		
-		default:
-			break;
-		
-	}
-	
-}
 
 /* USER CODE END 4 */
 

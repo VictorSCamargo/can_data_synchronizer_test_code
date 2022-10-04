@@ -11,65 +11,73 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
-
-/* ADAPTADO PARA PLACA STM32F103C8T6 */
+	 
+/*----------------------------------------------*/
 	 
 /* include the HAL for your board model */
 #include "stm32f1xx_hal.h"
 
 /* to debug with only one STM32 board */
 //#define CAN_MVS_LOOPBACK_MODE
-
-#define MASTER_BOARD
-//#define SLAVE_BOARD
 	 
-/* to use different CAN pins */
+/* CUSTOM USER CODE BEGIN */
+
+#define MVS_CAN_BOARD_1
+//#define MVS_CAN_BOARD_2
+
+/* to use different CAN pins in STM32F103C8T6 */
 //#define PINOS_CAN_A11_A12
 
-#if defined(MASTER_BOARD) + defined(SLAVE_BOARD) == 1
-	#error "Select between MASTER OR SLAVE."
+#if defined(MVS_CAN_BOARD_1) + defined(MVS_CAN_BOARD_2) != 1
+	#error "Select between board 1 OR 2."
 #endif
+
+#ifdef MVS_CAN_BOARD_1
+	#define CUSTOM_SENDER_ID (0x103)
+	#define CUSTOM_FILTER_ID (0x407)
+#else
+	#define CUSTOM_SENDER_ID (0x407)
+	#define CUSTOM_FILTER_ID (0x103)
+#endif
+
+/* CUSTOM USER CODE END */
 
 /* this should be the ID that the other device's CAN filter was configured to receive*/
-#ifdef MASTER_BOARD
-	#define CAN_MVS_SENDER_ID (0x103<<5)
-#else
-	#define CAN_MVS_SENDER_ID (0x407<<5)
-#endif
+#define CAN_MVS_SENDER_ID CUSTOM_SENDER_ID
 
 /* the device will receive messages that have this ID */
-#ifdef MASTER_BOARD
-	#define CAN_MVS_FILTER_ID (0x407<<5)
-#else
-	#define CAN_MVS_FILTER_ID (0x103<<5)
-#endif
+#define CAN_MVS_FILTER_ID CUSTOM_FILTER_ID
 
 #ifdef CAN_MVS_LOOPBACK_MODE
-	#define HAL_CAN_FILTER_ID CAN_MVS_SENDER_ID //should be the same in the loopback mode
+	#define HAL_CAN_FILTER_ID (CAN_MVS_SENDER_ID<<5) //should be the same in the loopback mode
 #else
-	#define HAL_CAN_FILTER_ID CAN_MVS_FILTER_ID
+	#define HAL_CAN_FILTER_ID (CAN_MVS_FILTER_ID<<5)
 #endif
+
 
 /**
   * Add the IDs for your structs in this enum.
   * - first ID should be equal to zero.
-  * - do not remove ID_STRUCT_MAX.
+  * - do not remove ID_DATA_MAX / ID_FNC_MAX.
   */
-typedef enum
-{
-	/*	ATENCAO com a ordem das variaveis! quanto menor, maior a prioridade de envio.	*/
-	ID_STRUCT_EXEMPLO_1 = 0,
-	ID_STRUCT_EXEMPLO_2,
-	ID_STRUCT_MAX
-} CAN_MVS_struct_id;
 
+/* Up to 32 IDs + ID_DATA_MAX */
 typedef enum
 {
-	ID_FNC_COMECAR_AQUISICAO = 0,
-	ID_FNC_FINALIZAR_AQUISICAO,
-	ID_FNC_SETAR_NOVA_HORA_RTC,
+	ID_DATA_EX_1 = 0,
+	ID_DATA_EX_2,
+	ID_DATA_MAX
+} CAN_MVS_data_id;
+
+/* Up to 32 IDs + ID_FNC_MAX */
+typedef enum
+{
+	ID_FNC_ADD_1_TO_DATA_1 = 0,
+	ID_FNC_ADD_1_TO_DATA_2,
 	ID_FNC_MAX
 } CAN_MVS_functions_id;
+
+/*----------------------------------------------*/
 
 #ifdef __cplusplus
 }

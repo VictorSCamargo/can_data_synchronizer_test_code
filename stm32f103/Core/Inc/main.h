@@ -32,8 +32,6 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "tm_stm32_hd44780.h"
-
 //#include "ihm_mvs.h"
 	
 /* USER CODE END Includes */

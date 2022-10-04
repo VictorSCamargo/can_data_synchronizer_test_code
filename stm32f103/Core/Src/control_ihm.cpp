@@ -1,124 +1,109 @@
 #include "control_ihm.h"
 
-typedef struct
-{
-	uint8_t v1;
-	float v2;
-} struct_tipo_1;
-
-typedef struct
-{
-	float v1;
-	int v2;
-} struct_tipo_2;
-
-enum can_test_type{
-	CAN_TEST_SEND_DATA = 0,
-	CAN_TEST_EXEC_FUNCTION,
-	CAN_TEST_REQUEST_DATA,
-	CAN_TEST_REQUEST_FUNC_EXEC,
-	CAN_TEST_MAX
-};
-
-struct_tipo_1 struct_exemplo_1;
-struct_tipo_2 struct_exemplo_2;
-
-/*	Variaveis diversas	*/
-
-int8_t opcao_can = 0;
-
-/*	Construtor	*/
+#define DELAY_BUTTON_READ_MAX 3
 
 ControlIhm::ControlIhm()
 {
-	delayLeituraBotoesIhm = 0;
-	delayAtualizaTela = 0;
-	botaoSelecionado = tNenhum;
+	delay_button_read = 0;
+	test_option = 0;
+	pressed_button = BUTTON_NONE;
 }
 
-void ControlIhm::iniciar(void)
+void ControlIhm::init(CAN_HandleTypeDef* hcan)
 {
-	can.init(&hcan);
+	can.init(hcan);
 	
-	#ifdef MASTER_BOARD
-	struct_exemplo_1.v1 = 7;
-	struct_exemplo_1.v2 = 15.2;
-	struct_exemplo_2.v1 = 0;
-	struct_exemplo_2.v2 = 0;
+	//example values
+	#ifdef MVS_CAN_BOARD_1
+	data_1.v1 = 2;
+	data_1.v2 = 1.5;
+	data_2.v1 = 0;
+	data_2.v2 = 0;
 	#else
-	struct_exemplo_1.v1 = 13;
-	struct_exemplo_1.v2 = 2.25;
-	struct_exemplo_2.v1 = 55.2;
-	struct_exemplo_2.v2 = -2;
+	data_1.v1 = 0;
+	data_1.v2 = 0;
+	data_2.v1 = 30.4;
+	data_2.v2 = -5;
 	#endif
 	
-	can.connect_struct_to_id(ID_STRUCT_EXEMPLO_1, (uint8_t*)&struct_exemplo_1, sizeof(struct_exemplo_1));
-	can.connect_struct_to_id(ID_STRUCT_EXEMPLO_2, (uint8_t*)&struct_exemplo_2, sizeof(struct_exemplo_2));
+	CAN_status status = CAN_STATUS_OK;
 	
+	status = can.connect_struct_to_id(ID_DATA_EX_1, (uint8_t*)&data_1, sizeof(data_1));
+	status = can.connect_struct_to_id(ID_DATA_EX_2, (uint8_t*)&data_2, sizeof(data_2));
+	
+	if(status != CAN_STATUS_OK)
+	{
+		while(true){}
+	}
 }
 
-void ControlIhm::programa_principal(void)
+void ControlIhm::main_program(void)
 {
-	leituraBotoesIhm();
-	sincronizar_dados_entre_placas();
+	process_read_button();
+	can_data_sync_program();
 }
 
-void ControlIhm::sincronizar_dados_entre_placas(void)
+void ControlIhm::can_receive_data_callback(void)
+{
+	can.receive_data_callback();
+}
+
+void ControlIhm::can_data_sync_program(void)
 {
 	can.shipping_application();
 
-	if(can.is_there_any_data_id_flag_marked(CAN_FLG_TO_BE_PROCESSED))
+	if(can.is_there_any_data_id_flag_marked(CAN_MARK_TO_BE_PROCESSED))
 	{
-		/* Dentro fica a logica de prioridade de qual dado sera enviado */
-		CAN_MVS_struct_id a_ser_enviada = pega_id_marcado_de_data();
+		CAN_MVS_data_id data_id_to_be_sent = get_next_data_id_to_be_sent();
 		
-		if(can.start_shipping_data(a_ser_enviada) == CAN_MVS_OK)
+		if(can.start_shipping_data(data_id_to_be_sent) == CAN_STATUS_OK)
 		{
-			can.unmark_data_id_flag(CAN_FLG_TO_BE_PROCESSED, a_ser_enviada);
+			can.unmark_data_id_flag(CAN_MARK_TO_BE_PROCESSED, data_id_to_be_sent);
 		}
 	}
 
-	while(can.is_there_any_func_id_flag_marked(CAN_FLG_TO_BE_PROCESSED))
+	while(can.is_there_any_func_id_flag_marked(CAN_MARK_TO_BE_PROCESSED))
 	{
-		CAN_MVS_functions_id func_id = pega_id_marcado_de_func();
+		CAN_MVS_functions_id func_id_to_be_exec = get_next_func_id_to_be_exec();
 		
-		switch(func_id)
+		switch(func_id_to_be_exec)
 		{
-			case ID_FNC_COMECAR_AQUISICAO:
+			case ID_FNC_ADD_1_TO_DATA_1:
+				data_1.v1++;
+				data_1.v2++;
 				break;
 
-			case ID_FNC_FINALIZAR_AQUISICAO:
-				break;
-
-			case ID_FNC_SETAR_NOVA_HORA_RTC:
+			case ID_FNC_ADD_1_TO_DATA_2:
+				data_2.v1++;
+				data_2.v2++;
 				break;
 
 			default:
 				break;
 		}
-		can.unmark_func_id_flag(CAN_FLG_TO_BE_PROCESSED, func_id);
+		can.unmark_func_id_flag(CAN_MARK_TO_BE_PROCESSED, func_id_to_be_exec);
 	}	
 }
 
-CAN_MVS_struct_id ControlIhm::pega_id_marcado_de_data(void)
+CAN_MVS_data_id ControlIhm::get_next_data_id_to_be_sent(void)
 {
-	/* Decidi enviar por ordem de prioridade */
-	for(uint8_t id = 0; id < ID_STRUCT_MAX; id++)
+	/* The priority of this algorythm is by ID position */
+	for(uint8_t id = 0; id < ID_DATA_MAX; id++)
 	{
-		if(can.is_data_id_flag_marked(CAN_FLG_TO_BE_PROCESSED, (CAN_MVS_struct_id)id))
+		if(can.is_data_id_flag_marked(CAN_MARK_TO_BE_PROCESSED, (CAN_MVS_data_id)id))
 		{
-			return (CAN_MVS_struct_id)id;
+			return (CAN_MVS_data_id)id;
 		}
 	}
-	return ID_STRUCT_MAX;
+	return ID_DATA_MAX;
 }
 
-CAN_MVS_functions_id ControlIhm::pega_id_marcado_de_func(void)
+CAN_MVS_functions_id ControlIhm::get_next_func_id_to_be_exec(void)
 {
-	/* Decidi enviar por ordem de prioridade */
+	/* The priority of this algorythm is by ID position */
 	for(uint8_t id = 0; id < ID_FNC_MAX; id++)
 	{
-		if(can.is_func_id_flag_marked(CAN_FLG_TO_BE_PROCESSED, (CAN_MVS_functions_id)id))
+		if(can.is_func_id_flag_marked(CAN_MARK_TO_BE_PROCESSED, (CAN_MVS_functions_id)id))
 		{
 			return (CAN_MVS_functions_id)id;
 		}
@@ -126,67 +111,67 @@ CAN_MVS_functions_id ControlIhm::pega_id_marcado_de_func(void)
 	return ID_FNC_MAX;
 }
 
-/*	Setters	*/
+void ControlIhm::process_read_button(void){
 
-void ControlIhm::setBotaoSelecionado(Botbot botao){
-	if (delayLeituraBotoesIhm == 0){
-		botaoSelecionado = botao;
-	}
-}
-void ControlIhm::setDelayLeituraBotoesIhm(uint8_t d){
-	delayLeituraBotoesIhm = d;
-}
-void ControlIhm::setDelayAtualizaTela(uint8_t d){
-	delayAtualizaTela = d;
-}
-
-/*	Getters	*/
-
-uint8_t ControlIhm::getDelayLeituraBotoesIhm(void){
-	return delayLeituraBotoesIhm;
-}
-uint8_t ControlIhm::getDelayAtualizaTela(void){
-	return delayAtualizaTela;
-}
-
-/*	Outros	*/
-
-void ControlIhm::leituraBotoesIhm(void){
-
-	// Entra se algum botão for apertado
-	if (botaoSelecionado != tNenhum){
+	if (pressed_button != BUTTON_NONE)
+	{
 		
-		if(botaoSelecionado == tBotaoEntrar)
+		if(pressed_button == BUTTON_1)
 		{
-			
-			#ifdef MASTER_BOARD
-			switch(opcao_can)
+			#ifndef CAN_MVS_LOOPBACK_MODE
+
+			switch(test_option)
 			{
-				case 0:
-					can.mark_data_id_flag(CAN_FLG_TO_BE_PROCESSED, ID_STRUCT_EXEMPLO_1);
+				case CAN_TEST_SEND_DATA:
+					can.mark_data_id_flag(CAN_MARK_TO_BE_PROCESSED, ID_DATA_EX_1);
 					break;
-				case 1:
-					can.mark_data_id_flag(CAN_FLG_TO_BE_REQUESTED, ID_STRUCT_EXEMPLO_2);
+
+				case CAN_TEST_REQUEST_DATA:
+					can.mark_data_id_flag(CAN_MARK_TO_BE_REQUESTED, ID_DATA_EX_2);
 					break;
+				
+				case CAN_TEST_EXEC_FUNCTION:
+					can.mark_func_id_flag(CAN_MARK_TO_BE_PROCESSED, ID_FNC_ADD_1_TO_DATA_1);
+					break;
+				
+				case CAN_TEST_REQUEST_FUNC_EXEC:
+					can.mark_func_id_flag(CAN_MARK_TO_BE_REQUESTED, ID_FNC_ADD_1_TO_DATA_2);
+					break;
+
 				default:
-					opcao_can = -1;
+					break;
 			}
-			if(++opcao_can == 2)
+
+			if(++test_option == CAN_TEST_MAX)
 			{
-				opcao_can = 0;
+				test_option = 0;
 			}
+			
+			#else
+			
+				can.start_shipping_data(ID_DATA_MAX);
+			
 			#endif
 		}
 		
-		botaoSelecionado = tNenhum;
-		delayLeituraBotoesIhm = 1;
+		pressed_button = BUTTON_NONE;
+		delay_button_read = 5;
 	}
 }
 
-void ControlIhm::atualizaTela(void){
-	
-	if (delayAtualizaTela == 0){
+void ControlIhm::gpio_button_callback(buttons botao)
+{
+	if (delay_button_read == 0)
+	{
+		pressed_button = botao;
+		delay_button_read = DELAY_BUTTON_READ_MAX;
+	}
+}
 
-		delayAtualizaTela = 5;
+void ControlIhm::timer_2_callback(void)
+{
+	if (delay_button_read > 0)
+	{
+		delay_button_read--;
 	}
 }

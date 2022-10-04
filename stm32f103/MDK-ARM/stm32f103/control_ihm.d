@@ -1,7 +1,9 @@
 stm32f103\control_ihm.o: ..\Core\Src\control_ihm.cpp
 stm32f103\control_ihm.o: ../Core/Inc/control_ihm.h
-stm32f103\control_ihm.o: ../Core/Inc/ihm_mvs.h
-stm32f103\control_ihm.o: ../Core/Inc/tm_stm32_hd44780.h
+stm32f103\control_ihm.o: ../Core/can_mvs/Inc/can_mvs.h
+stm32f103\control_ihm.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+stm32f103\control_ihm.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+stm32f103\control_ihm.o: ../Core/can_mvs/Inc/can_mvs_config.h
 stm32f103\control_ihm.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h
 stm32f103\control_ihm.o: ../Core/Inc/stm32f1xx_hal_conf.h
 stm32f103\control_ihm.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h
@@ -33,11 +35,3 @@ stm32f103\control_ihm.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h
 stm32f103\control_ihm.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h
 stm32f103\control_ihm.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h
 stm32f103\control_ihm.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
-stm32f103\control_ihm.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd.h
-stm32f103\control_ihm.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_usb.h
-stm32f103\control_ihm.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd_ex.h
-stm32f103\control_ihm.o: ../Core/Inc/usb_host.h
-stm32f103\control_ihm.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
-stm32f103\control_ihm.o: ../Core/can_mvs/Inc/can_mvs.h
-stm32f103\control_ihm.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
-stm32f103\control_ihm.o: ../Core/can_mvs/Inc/can_mvs_config.h

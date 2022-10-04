@@ -1,66 +1,71 @@
 #ifndef __CONTROL_IHM_H
 #define __CONTROL_IHM_H
 
-#include "ihm_mvs.h"
 #include "can_mvs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-	extern CAN_HandleTypeDef hcan;
+	typedef enum{
+		BUTTON_NONE = 0,
+		BUTTON_1,
+		BUTTON_MAX
+	} buttons;
 	
-		class ControlIhm
-		{
-			private:
-				
-				uint8_t delayLeituraBotoesIhm;
-				uint8_t delayAtualizaTela;
-				Botbot botaoSelecionado;
+	typedef enum {
+		CAN_TEST_SEND_DATA = 0,
+		CAN_TEST_REQUEST_DATA,
+		CAN_TEST_EXEC_FUNCTION,
+		CAN_TEST_REQUEST_FUNC_EXEC,
+		CAN_TEST_MAX
+	} can_test_type;
+	
+	typedef struct
+	{
+		uint8_t v1;
+		float v2;
+	} struct_type_1;
 
-				void BOTOES_MP(void);
-				void BOTOES_MVG(void);
-				void BOTOES_MTC(void);
-				void BOTOES_MVA(void);
-			
-				void altera_opcao_MP(int);
-				void setas_t_config_salvar(void);
-				void setas_t_config_variaveis(const int, int*, int*, const int, const int);
-			
-			public:
-				ControlIhm();
-				CanMvs can;
-			
-				void iniciar(void);
-				void programa_principal(void);
-			
-				void sincronizar_dados_entre_placas(void);
-				CAN_MVS_struct_id pega_id_marcado_de_data(void);
-				CAN_MVS_functions_id pega_id_marcado_de_func(void);
-				
-				void setBotaoSelecionado(Botbot);
-				void setDelayLeituraBotoesIhm(uint8_t);
-				void setDelayAtualizaTela(uint8_t);
+	typedef struct
+	{
+		float v1;
+		int v2;
+	} struct_type_2;
+	
+	class ControlIhm
+	{
+		private:
+			CanMvs can;
+		
+			struct_type_1 data_1;
+			struct_type_2 data_2;
+		
+			uint8_t test_option;
 
-				uint8_t getDelayLeituraBotoesIhm(void);
-				uint8_t getDelayAtualizaTela(void);
-			
-				void leituraBotoesIhm(void);
-				void atualizaTela(void);
-			
-				void alarme(int);
-				
-			
-		};
-	
-	
-	
+			uint8_t delay_button_read;
+			buttons pressed_button;
+
+			void can_data_sync_program(void);
+			void process_read_button(void);
+
+			CAN_MVS_data_id get_next_data_id_to_be_sent(void);
+			CAN_MVS_functions_id get_next_func_id_to_be_exec(void);
+		
+		public:
+			ControlIhm();
+
+			void init(CAN_HandleTypeDef*);
+			void main_program(void);
+		
+			void can_receive_data_callback(void);
+
+			void gpio_button_callback(buttons);
+			void timer_2_callback(void);
+	};
+
 #ifdef __cplusplus
 }
-#endif		
-		
-			 		 
-	 
-
+#endif
 
 #endif

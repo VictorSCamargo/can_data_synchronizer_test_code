@@ -110,13 +110,13 @@
         </CommonProperty>
         <DllOption>
           <SimDllName>SARMCM3.DLL</SimDllName>
-          <SimDllArguments></SimDllArguments>
-          <SimDlgDll>DARMSTM.DLL</SimDlgDll>
-          <SimDlgDllArguments>-pSTM32F103C8</SimDlgDllArguments>
+          <SimDllArguments>-REMAP</SimDllArguments>
+          <SimDlgDll>DCM.DLL</SimDlgDll>
+          <SimDlgDllArguments>-pCM3</SimDlgDllArguments>
           <TargetDllName>SARMCM3.DLL</TargetDllName>
           <TargetDllArguments></TargetDllArguments>
-          <TargetDlgDll>TARMSTM.DLL</TargetDlgDll>
-          <TargetDlgDllArguments>-pSTM32F103C8</TargetDlgDllArguments>
+          <TargetDlgDll>TCM.DLL</TargetDlgDll>
+          <TargetDlgDllArguments>-pCM3</TargetDlgDllArguments>
         </DllOption>
         <DebugOption>
           <OPTHX>
@@ -336,7 +336,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../USB_DEVICE/App;../USB_DEVICE/Target;../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/HID/Inc;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Core/Src;../Core/can_mvs/Inc;../Core/can_mvs/Src</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Core/Src;../Core/can_mvs/Inc;../Core/can_mvs/Src</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -391,11 +391,6 @@
           <GroupName>Application/User/Core</GroupName>
           <Files>
             <File>
-              <FileName>tm_stm32_hd44780.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\tm_stm32_hd44780.c</FilePath>
-            </File>
-            <File>
               <FileName>main.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\Core\Src\main.cpp</FilePath>
@@ -410,30 +405,10 @@
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f1xx_hal_msp.c</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Application/User/USB_DEVICE/App</GroupName>
-          <Files>
             <File>
-              <FileName>usb_device.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../USB_DEVICE/App/usb_device.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbd_desc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../USB_DEVICE/App/usbd_desc.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Application/User/USB_DEVICE/Target</GroupName>
-          <Files>
-            <File>
-              <FileName>usbd_conf.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../USB_DEVICE/Target/usbd_conf.c</FilePath>
+              <FileName>can_mvs.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\Core\can_mvs\Src\can_mvs.cpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -446,19 +421,9 @@
               <FilePath>../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio_ex.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f1xx_hal_pcd.c</FileName>
+              <FileName>stm32f1xx_hal_can.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f1xx_hal_pcd_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pcd_ex.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f1xx_ll_usb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_ll_usb.c</FilePath>
+              <FilePath>../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c</FilePath>
             </File>
             <File>
               <FileName>stm32f1xx_hal.c</FileName>
@@ -511,11 +476,6 @@
               <FilePath>../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_exti.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f1xx_hal_can.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f1xx_hal_crc.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_crc.c</FilePath>
@@ -553,77 +513,12 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Middlewares/USB_Device_Library</GroupName>
-          <Files>
-            <File>
-              <FileName>usbd_core.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbd_ctlreq.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbd_ioreq.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbd_hid.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Variaveis MVS</GroupName>
-          <Files>
-            <File>
-              <FileName>funcoes_mtc.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\Core\Src\funcoes_mtc.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>funcoes_mva.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\Core\Src\funcoes_mva.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>funcoes_mvg.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\Core\Src\funcoes_mvg.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>funcoes_usb.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\Core\Src\funcoes_usb.cpp</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>Control</GroupName>
           <Files>
             <File>
               <FileName>control_ihm.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\Core\Src\control_ihm.cpp</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Dados</GroupName>
-          <Files>
-            <File>
-              <FileName>dados_mvs.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\Core\Src\dados_mvs.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>can_mvs.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\Core\can_mvs\Src\can_mvs.cpp</FilePath>
             </File>
           </Files>
         </Group>
